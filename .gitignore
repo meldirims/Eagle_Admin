@@ -1,0 +1,251 @@
+package view;
+
+import android.animation.Animator;
+import android.animation.Animator.AnimatorListener;
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
+import android.app.Activity;
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Paint.Style;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
+import android.support.annotation.DrawableRes;
+import android.view.MotionEvent;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.animation.AccelerateInterpolator;
+import android.view.animation.OvershootInterpolator;
+import android.widget.FrameLayout.LayoutParams;
+
+public class FloatingActionButton extends View {
+    static final AccelerateInterpolator accelerateInterpolator;
+    static final OvershootInterpolator overshootInterpolator;
+    Context context;
+    Bitmap mBitmap;
+    Paint mButtonPaint;
+    Paint mDrawablePaint;
+    boolean mHidden;
+
+    /* renamed from: view.FloatingActionButton.1 */
+    class C06211 implements AnimatorListener {
+        C06211() {
+        }
+
+        public void onAnimationStart(Animator animation) {
+        }
+
+        public void onAnimationEnd(Animator animation) {
+            FloatingActionButton.this.setVisibility(4);
+        }
+
+        public void onAnimationCancel(Animator animation) {
+        }
+
+        public void onAnimationRepeat(Animator animation) {
+        }
+    }
+
+    public static class Builder {
+        private final Activity activity;
+        int color;
+        Drawable drawable;
+        int gravity;
+        private LayoutParams params;
+        float scale;
+        int size;
+
+        public Builder(Activity context) {
+            this.gravity = 85;
+            this.color = -1;
+            this.size = 0;
+            this.scale = 0.0f;
+            this.scale = context.getResources().getDisplayMetrics().density;
+            this.size = convertToPixels(72, this.scale);
+            this.params = new LayoutParams(this.size, this.size);
+            this.params.gravity = this.gravity;
+            this.activity = context;
+        }
+
+        public Builder withGravity(int gravity) {
+            this.gravity = gravity;
+            return this;
+        }
+
+        public Builder withMargins(int left, int top, int right, int bottom) {
+            this.params.setMargins(convertToPixels(left, this.scale), convertToPixels(top, this.scale), convertToPixels(right, this.scale), convertToPixels(bottom, this.scale));
+            return this;
+        }
+
+        public Builder withDrawable(Drawable drawable) {
+            this.drawable = drawable;
+            return this;
+        }
+
+        public Builder withDrawable(@DrawableRes int drawableRes) {
+            this.drawable = this.activity.getResources().getDrawable(drawableRes);
+            return this;
+        }
+
+        public Builder withButtonColor(int color) {
+            this.color = color;
+            return this;
+        }
+
+        public Builder withButtonSize(int size) {
+            size = convertToPixels(size, this.scale);
+            this.params = new LayoutParams(size, size);
+            return this;
+        }
+
+        public FloatingActionButton create() {
+            FloatingActionButton button = new FloatingActionButton(this.activity);
+            button.setFloatingActionButtonColor(this.color);
+            button.setFloatingActionButtonDrawable(this.drawable);
+            this.params.gravity = this.gravity;
+            ((ViewGroup) this.activity.findViewById(16908290)).addView(button, this.params);
+            return button;
+        }
+
+        private int convertToPixels(int dp, float scale) {
+            return (int) ((((float) dp) * scale) + 0.5f);
+        }
+    }
+
+    static {
+        overshootInterpolator = new OvershootInterpolator();
+        accelerateInterpolator = new AccelerateInterpolator();
+    }
+
+    public FloatingActionButton(Context context) {
+        super(context);
+        this.mHidden = false;
+        this.context = context;
+        init(-1);
+    }
+
+    public void setFloatingActionButtonColor(int FloatingActionButtonColor) {
+        init(FloatingActionButtonColor);
+    }
+
+    public void setFloatingActionButtonDrawable(Drawable FloatingActionButtonDrawable) {
+        this.mBitmap = ((BitmapDrawable) FloatingActionButtonDrawable).getBitmap();
+        invalidate();
+    }
+
+    public void init(int FloatingActionButtonColor) {
+        setWillNotDraw(false);
+        setLayerType(1, null);
+        this.mButtonPaint = new Paint(1);
+        this.mButtonPaint.setColor(FloatingActionButtonColor);
+        this.mButtonPaint.setStyle(Style.FILL);
+        this.mButtonPaint.setShadowLayer(3.0f, 0.0f, 3.5f, Color.argb(100, 0, 0, 0));
+        this.mDrawablePaint = new Paint(1);
+        invalidate();
+    }
+
+    protected void onDraw(Canvas canvas) {
+        setClickable(true);
+        canvas.drawCircle((float) (getWidth() / 2), (float) (getHeight() / 2), (float) (((double) getWidth()) / 2.6d), this.mButtonPaint);
+        canvas.drawBitmap(this.mBitmap, (float) ((getWidth() - this.mBitmap.getWidth()) / 2), (float) ((getHeight() - this.mBitmap.getHeight()) / 2), this.mDrawablePaint);
+    }
+
+    public boolean onTouchEvent(MotionEvent event) {
+        if (event.getAction() == 1) {
+            setAlpha(1.0f);
+        } else if (event.getAction() == 0) {
+            setAlpha(0.6f);
+        }
+        return super.onTouchEvent(event);
+    }
+
+    public void hideFloatingActionButton() {
+        if (!this.mHidden) {
+            ObjectAnimator scaleX = ObjectAnimator.ofFloat(this, "scaleX", new float[]{1.0f, 0.0f});
+            ObjectAnimator scaleY = ObjectAnimator.ofFloat(this, "scaleY", new float[]{1.0f, 0.0f});
+            AnimatorSet animSetXY = new AnimatorSet();
+            animSetXY.playTogether(new Animator[]{scaleX, scaleY});
+            animSetXY.setInterpolator(accelerateInterpolator);
+            animSetXY.setDuration(100);
+            animSetXY.addListener(new C06211());
+            animSetXY.start();
+            this.mHidden = true;
+        }
+    }
+
+    public void showFloatingActionButton() {
+        if (this.mHidden) {
+            setVisibility(0);
+            ObjectAnimator scaleX = ObjectAnimator.ofFloat(this, "scaleX", new float[]{0.0f, 1.0f});
+            ObjectAnimator scaleY = ObjectAnimator.ofFloat(this, "scaleY", new float[]{0.0f, 1.0f});
+            AnimatorSet animSetXY = new AnimatorSet();
+            animSetXY.playTogether(new Animator[]{scaleX, scaleY});
+            animSetXY.setInterpolator(overshootInterpolator);
+            animSetXY.setDuration(200);
+            animSetXY.start();
+            this.mHidden = false;
+        }
+    }
+
+    public boolean isHidden() {
+        return this.mHidden;
+    }
+}
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:"http://schemas.android.com/apk/res/android" android:versionCode="1998" android:versionName="1" android:installLocation="auto" package="com.mnf.tgadmintools" platformBuildVersionCode="24" platformBuildVersionName="7.0">
+    <uses-sdk android:minSdkVersion="11" android:targetSdkVersion="23" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-feature android:name="android.hardware.location" android:required="false" />
+    <uses-feature android:name="android.hardware.location.network" android:required="false" />
+    <application android:theme="@style/AppTheme" android:label="@string/app_name" android:icon="@mipmap/ic_launcher" android:name="com.madpixels.tgadmintools.App" android:allowBackup="true" android:supportsRtl="true">
+        <meta-data android:name="com.google.android.gms.version" android:value="@integer/google_play_services_version" />
+        <activity android:theme="@*android:style/Theme.Translucent" android:name="com.google.android.gms.ads.AdActivity" android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize" />
+        <activity android:theme="@style/ToolbarTheme" android:name="com.madpixels.tgadmintools.activity.MainActivity" android:configChanges="orientation|screenSize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:theme="@style/ToolbarTheme" android:name="com.madpixels.tgadmintools.activity.ActivityGroupsList" />
+        <activity android:theme="@style/ToolbarTheme" android:name="com.madpixels.tgadmintools.activity.ActivityBanList" />
+        <activity android:theme="@style/ToolbarTheme" android:name="com.madpixels.tgadmintools.activity.ActivityChatUsers" />
+        <activity android:theme="@style/ToolbarTheme" android:name="com.madpixels.tgadmintools.activity.ActivityGroupInfo" />
+        <activity android:theme="@style/ToolbarTheme" android:name="com.madpixels.tgadmintools.activity.ActivitySettings" />
+        <activity android:theme="@style/ToolbarTheme" android:name="com.madpixels.tgadmintools.activity.ActivityLogView" />
+        <activity android:name="com.madpixels.tgadmintools.activity.ActivityBannedWordsList" />
+        <activity android:theme="@style/ToolbarTheme" android:name="com.madpixels.tgadmintools.activity.ActivityChatCommands" />
+        <receiver android:name="com.madpixels.tgadmintools.services.ReceiverStartupSystem">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+        <service android:name="com.madpixels.tgadmintools.services.ServiceUnbanTask" />
+        <service android:name="com.madpixels.tgadmintools.services.ServiceAutoKicker" />
+        <service android:name="com.madpixels.tgadmintools.services.ServiceChatTask" />
+        <service android:name="com.madpixels.tgadmintools.services.ServiceOnStartCheckAuth" />
+        <service android:name="com.madpixels.tgadmintools.services.ServiceBackgroundStarter" />
+        <activity android:theme="@*android:style/Theme.Dialog" android:name="org.acra.CrashReportDialog" android:finishOnTaskLaunch="true" android:excludeFromRecents="true" android:launchMode="singleInstance" />
+        <activity android:theme="@*android:style/Theme.Dialog" android:name="org.acra.dialog.CrashReportDialog" android:finishOnTaskLaunch="true" android:excludeFromRecents="true" android:launchMode="singleInstance" />
+        <service android:name="org.acra.sender.SenderService" android:exported="false" android:process=":acra" />
+        <service android:name="com.yandex.metrica.MetricaService" android:enabled="true" android:exported="true" android:process=":Metrica">
+            <intent-filter>
+                <category android:name="android.intent.category.DEFAULT" />
+                <action android:name="com.yandex.metrica.IMetricaService" />
+                <data android:scheme="metrica" />
+            </intent-filter>
+            <meta-data android:name="metrica:api:level" android:value="48" />
+        </service>
+        <receiver android:name="com.yandex.metrica.MetricaEventHandler" android:enabled="true" android:exported="true">
+            <intent-filter>
+                <action android:name="com.android.vending.INSTALL_REFERRER" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>
